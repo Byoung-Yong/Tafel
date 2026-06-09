@@ -42,6 +42,7 @@ export function TafelApp() {
   const [minPotentialSpan, setMinPotentialSpan] = useState<number>(presetConfig('balanced').minPotentialSpan);
   const [minLogiSpan, setMinLogiSpan] = useState<number>(presetConfig('balanced').minLogiSpan);
   const [bootstrapSamples, setBootstrapSamples] = useState<number>(presetConfig('balanced').bootstrapSamples);
+  const [csvText, setCsvText] = useState<string>('');
   const [normalized, setNormalized] = useState<NormalizedInput | null>(null);
   const [result, setResult] = useState<DetectionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -84,93 +85,111 @@ export function TafelApp() {
   async function onFile(file: File | null) {
     if (!file) return;
     const text = await file.text();
+    setCsvText(text);
     analyzeText(text);
   }
 
   async function loadSample() {
     const response = await fetch('/sample.csv');
     const text = await response.text();
+    setCsvText(text);
     analyzeText(text);
   }
 
   const topPick = result?.picks[0];
 
   return (
-    <main className="container">
-      <section className="hero">
+    <main className="container lab-card">
+      <header className="lab-header">
         <h1>Tafel Auto Detector</h1>
-      </section>
+        <p>Electrochemistry AI Research Team</p>
+      </header>
 
-      <section className="grid">
-        <aside className="panel stack">
-          <h2>Input</h2>
-          <div className="field">
-            <label htmlFor="csv-file">CSV file</label>
-            <input id="csv-file" type="file" accept=".csv,.txt" onChange={(event) => onFile(event.target.files?.[0] ?? null)} />
-            <div className="help">Supported columns: eta/logi, potential/current, E_V/j_A_cm2, and common aliases.</div>
-          </div>
-
-          <div className="field">
-            <label htmlFor="preset">Preset</label>
-            <select id="preset" value={preset} onChange={(event) => applyPreset(event.target.value as DetectionPreset)}>
-              <option value="exploratory">exploratory</option>
-              <option value="balanced">balanced</option>
-              <option value="strict">strict</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="min-points">Minimum points</label>
-            <input id="min-points" type="number" min={5} max={80} value={minPoints} onChange={(event) => setMinPoints(Number(event.target.value))} />
-          </div>
-
-          <div className="field">
-            <label htmlFor="potential-span">Minimum potential span / V</label>
-            <input id="potential-span" type="number" step="0.005" min={0} value={minPotentialSpan} onChange={(event) => setMinPotentialSpan(Number(event.target.value))} />
-          </div>
-
-          <div className="field">
-            <label htmlFor="logi-span">Minimum log-current span / dec</label>
-            <input id="logi-span" type="number" step="0.05" min={0} value={minLogiSpan} onChange={(event) => setMinLogiSpan(Number(event.target.value))} />
-          </div>
-
-          <div className="field">
-            <label htmlFor="bootstrap">Bootstrap samples</label>
-            <input id="bootstrap" type="number" min={0} max={2000} value={bootstrapSamples} onChange={(event) => setBootstrapSamples(Number(event.target.value))} />
-          </div>
-
-          <div className="actions">
-            <button type="button" onClick={loadSample}>Load sample</button>
-            <button type="button" disabled={!normalized} onClick={() => normalized && setResult(detectTafelRegions(normalized.points, config))}>Re-run</button>
-            <button
-              type="button"
-              className="primary"
-              disabled={!result?.picks.length}
-              onClick={() => result && downloadText('tafel_candidate_regions.csv', picksToCsv(result.picks))}
-            >
-              Download CSV
-            </button>
-          </div>
-
-          <div className="help">
-            Vercel deployment version: static Next.js app. No data is uploaded to a server.
-          </div>
-        </aside>
-
-        <section className="stack">
-          {error && <div className="notice">{error}</div>}
-
-          {normalized && (
-            <div className="panel">
-              <h2>Dataset</h2>
-              <div className="metrics">
-                <div className="metric"><span>Mode</span><strong>{normalized.mode}</strong></div>
-                <div className="metric"><span>Points</span><strong>{normalized.points.length}</strong></div>
-                <div className="metric"><span>X column</span><strong>{normalized.potentialColumn}</strong></div>
-                <div className="metric"><span>Y/current column</span><strong>{normalized.logiColumn ?? normalized.currentColumn}</strong></div>
-              </div>
+      <section className="content stack">
+        <section className="grid">
+          <aside className="panel stack">
+            <h2>Data Input</h2>
+            <div className="field">
+              <label htmlFor="csv-text">Paste your data</label>
+              <textarea
+                id="csv-text"
+                rows={8}
+                value={csvText}
+                onChange={(event) => setCsvText(event.target.value)}
+                placeholder={`eta,logi
+-0.120,-4.82
+-0.115,-4.75
+-0.110,-4.69`}
+              />
+              <div className="help">Paste CSV/TXT data or upload a file. Supported columns: eta/logi, potential/current, E_V/j_A_cm2, and common aliases.</div>
             </div>
-          )}
+
+            <div className="field">
+              <label htmlFor="csv-file">Upload Data File (CSV/TXT)</label>
+              <input id="csv-file" type="file" accept=".csv,.txt" onChange={(event) => onFile(event.target.files?.[0] ?? null)} />
+            </div>
+
+            <div className="field">
+              <label htmlFor="preset">Preset</label>
+              <select id="preset" value={preset} onChange={(event) => applyPreset(event.target.value as DetectionPreset)}>
+                <option value="exploratory">exploratory</option>
+                <option value="balanced">balanced</option>
+                <option value="strict">strict</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="min-points">Minimum points</label>
+              <input id="min-points" type="number" min={5} max={80} value={minPoints} onChange={(event) => setMinPoints(Number(event.target.value))} />
+            </div>
+
+            <div className="field">
+              <label htmlFor="potential-span">Minimum potential span / V</label>
+              <input id="potential-span" type="number" step="0.005" min={0} value={minPotentialSpan} onChange={(event) => setMinPotentialSpan(Number(event.target.value))} />
+            </div>
+
+            <div className="field">
+              <label htmlFor="logi-span">Minimum log-current span / dec</label>
+              <input id="logi-span" type="number" step="0.05" min={0} value={minLogiSpan} onChange={(event) => setMinLogiSpan(Number(event.target.value))} />
+            </div>
+
+            <div className="field">
+              <label htmlFor="bootstrap">Bootstrap samples</label>
+              <input id="bootstrap" type="number" min={0} max={2000} value={bootstrapSamples} onChange={(event) => setBootstrapSamples(Number(event.target.value))} />
+            </div>
+
+            <div className="actions">
+              <button type="button" className="primary" onClick={() => analyzeText(csvText)}>Analyze</button>
+              <button type="button" onClick={loadSample}>Load sample</button>
+              <button type="button" disabled={!normalized} onClick={() => normalized && setResult(detectTafelRegions(normalized.points, config))}>Re-run</button>
+              <button
+                type="button"
+                disabled={!result?.picks.length}
+                onClick={() => result && downloadText('tafel_candidate_regions.csv', picksToCsv(result.picks))}
+              >
+                Download CSV
+              </button>
+            </div>
+
+            <div className="help">
+              Vercel deployment version: static Next.js app. No data is uploaded to a server.
+            </div>
+          </aside>
+
+          <section className="stack">
+            {error && <div className="notice">{error}</div>}
+
+            {normalized && (
+              <div className="panel">
+                <h2>Dataset</h2>
+                <div className="metrics">
+                  <div className="metric"><span>Mode</span><strong>{normalized.mode}</strong></div>
+                  <div className="metric"><span>Points</span><strong>{normalized.points.length}</strong></div>
+                  <div className="metric"><span>X column</span><strong>{normalized.potentialColumn}</strong></div>
+                  <div className="metric"><span>Y/current column</span><strong>{normalized.logiColumn ?? normalized.currentColumn}</strong></div>
+                </div>
+              </div>
+            )}
 
           {topPick && (
             <div className="panel">
@@ -222,9 +241,10 @@ export function TafelApp() {
           {!result && !error && (
             <div className="panel">
               <h2>Ready</h2>
-              <p className="footer-note">Upload a CSV or load the sample data. The browser implementation focuses on the repaired local-window algorithm and bootstrap CI. Full-curve/Bayesian fitting is intentionally not shown in this Vercel static app until its acceptance criteria are stricter.</p>
+              <p className="footer-note">Paste data, upload a CSV, or load the sample data. The browser implementation focuses on the repaired local-window algorithm and bootstrap CI. Full-curve/Bayesian fitting is intentionally not shown in this Vercel static app until its acceptance criteria are stricter.</p>
             </div>
           )}
+          </section>
         </section>
       </section>
     </main>
