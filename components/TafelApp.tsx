@@ -10,6 +10,8 @@ import {
   type DetectionConfig,
   type DetectionPreset,
   type DetectionResult,
+  type CurrentInputKind,
+  type PotentialInputKind,
   type NormalizedInput
 } from '@/lib/tafel';
 import { TafelChart } from '@/components/TafelChart';
@@ -43,6 +45,8 @@ export function TafelApp() {
   const [minLogiSpan, setMinLogiSpan] = useState<number>(presetConfig('balanced').minLogiSpan);
   const [bootstrapSamples, setBootstrapSamples] = useState<number>(presetConfig('balanced').bootstrapSamples);
   const [csvText, setCsvText] = useState<string>('');
+  const [potentialKind, setPotentialKind] = useState<PotentialInputKind>('potential');
+  const [currentKind, setCurrentKind] = useState<CurrentInputKind>('current');
   const [normalized, setNormalized] = useState<NormalizedInput | null>(null);
   const [result, setResult] = useState<DetectionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +74,7 @@ export function TafelApp() {
   function analyzeText(text: string) {
     try {
       const parsed = parseCsv(text);
-      const input = normalizeRows(parsed.headers, parsed.rows);
+      const input = normalizeRows(parsed.headers, parsed.rows, { potentialKind, currentKind });
       const nextResult = detectTafelRegions(input.points, config);
       setNormalized(input);
       setResult(nextResult);
@@ -116,12 +120,29 @@ export function TafelApp() {
                 rows={8}
                 value={csvText}
                 onChange={(event) => setCsvText(event.target.value)}
-                placeholder={`eta,logi
--0.120,-4.82
--0.115,-4.75
--0.110,-4.69`}
+                placeholder={`0.299846 -0.00261
+0.299796 -0.00247
+0.299792 -0.00234`}
               />
-              <div className="help">Paste CSV/TXT data or upload a file. Supported columns: eta/logi, potential/current, E_V/j_A_cm2, and common aliases.</div>
+              <div className="help">Paste two columns or upload a file. Separators can be comma, tab, semicolon, or spaces.</div>
+            </div>
+
+            <div className="option-grid">
+              <div className="field">
+                <label htmlFor="potential-kind">Potential column means</label>
+                <select id="potential-kind" value={potentialKind} onChange={(event) => setPotentialKind(event.target.value as PotentialInputKind)}>
+                  <option value="potential">E</option>
+                  <option value="eta">eta</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="current-kind">Current column means</label>
+                <select id="current-kind" value={currentKind} onChange={(event) => setCurrentKind(event.target.value as CurrentInputKind)}>
+                  <option value="current">i</option>
+                  <option value="logi">log10(i)</option>
+                </select>
+              </div>
             </div>
 
             <div className="field">
@@ -184,6 +205,8 @@ export function TafelApp() {
                 <h2>Dataset</h2>
                 <div className="metrics">
                   <div className="metric"><span>Mode</span><strong>{normalized.mode}</strong></div>
+                  <div className="metric"><span>Potential type</span><strong>{normalized.potentialKind}</strong></div>
+                  <div className="metric"><span>Current type</span><strong>{normalized.currentKind}</strong></div>
                   <div className="metric"><span>Points</span><strong>{normalized.points.length}</strong></div>
                   <div className="metric"><span>X column</span><strong>{normalized.potentialColumn}</strong></div>
                   <div className="metric"><span>Y/current column</span><strong>{normalized.logiColumn ?? normalized.currentColumn}</strong></div>

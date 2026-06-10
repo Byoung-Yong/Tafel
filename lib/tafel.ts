@@ -5,13 +5,22 @@ export type DataPoint = {
 };
 
 export type InputMode = 'eta-logi' | 'potential-current';
+export type PotentialInputKind = 'eta' | 'potential';
+export type CurrentInputKind = 'logi' | 'current';
 
 export type NormalizedInput = {
   mode: InputMode;
+  potentialKind: PotentialInputKind;
+  currentKind: CurrentInputKind;
   potentialColumn: string;
   logiColumn?: string;
   currentColumn?: string;
   points: DataPoint[];
+};
+
+export type NormalizeOptions = {
+  potentialKind: PotentialInputKind;
+  currentKind: CurrentInputKind;
 };
 
 export type DetectionPreset = 'exploratory' | 'balanced' | 'strict';
@@ -85,33 +94,39 @@ function asNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function normalizeRows(headers: string[], rows: Record<string, string>[]): NormalizedInput {
-  const potentialColumn = findColumn(headers, POTENTIAL_ALIASES);
+export function normalizeRows(headers: string[], rows: Record<string, string>[], options: NormalizeOptions = { potentialKind: 'eta', currentKind: 'current' }): NormalizedInput {
+  const fallbackPotentialColumn = headers[0];
+  const fallbackSignalColumn = headers[1];
+  const potentialColumn = findColumn(headers, POTENTIAL_ALIASES) ?? fallbackPotentialColumn;
   if (!potentialColumn) {
     throw new Error('Could not find a potential/eta column. Try columns like eta, potential_V, or E_V.');
   }
 
   const logiColumn = findColumn(headers, LOGI_ALIASES);
   const currentColumn = findColumn(headers, CURRENT_ALIASES);
+  const signalColumn = options.currentKind === 'logi'
+    ? logiColumn ?? currentColumn ?? fallbackSignalColumn
+    : currentColumn ?? logiColumn ?? fallbackSignalColumn;
 
-  if (!logiColumn && !currentColumn) {
+  if (!signalColumn) {
     throw new Error('Could not find logi/logj or current/current-density column.');
   }
 
+  const signalIsLog = options.currentKind === 'logi' || (logiColumn !== undefined && currentColumn === undefined);
   const points: DataPoint[] = [];
   rows.forEach((row, index) => {
     const potential = asNumber(row[potentialColumn]);
     if (potential === null) return;
 
-    if (logiColumn) {
-      const logi = asNumber(row[logiColumn]);
+    if (signalIsLog) {
+      const logi = asNumber(row[signalColumn]);
       if (logi !== null && Number.isFinite(logi)) {
         points.push({ index, potential, logi });
       }
       return;
     }
 
-    const current = currentColumn ? asNumber(row[currentColumn]) : null;
+    const current = asNumber(row[signalColumn]);
     if (current !== null && current !== 0) {
       points.push({ index, potential, logi: Math.log10(Math.abs(current)) });
     }
@@ -124,10 +139,12 @@ export function normalizeRows(headers: string[], rows: Record<string, string>[])
   }
 
   return {
-    mode: logiColumn ? 'eta-logi' : 'potential-current',
+    mode: signalIsLog ? 'eta-logi' : 'potential-current',
+    potentialKind: options.potentialKind,
+    currentKind: signalIsLog ? 'logi' : 'current',
     potentialColumn,
-    logiColumn,
-    currentColumn,
+    logiColumn: signalIsLog ? signalColumn : undefined,
+    currentColumn: signalIsLog ? undefined : signalColumn,
     points
   };
 }

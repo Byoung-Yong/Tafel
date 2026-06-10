@@ -4,6 +4,10 @@ export type ParsedCsv = {
 };
 
 function splitLine(line: string, delimiter: string): string[] {
+  if (delimiter === 'whitespace') {
+    return line.trim().split(/\s+/).map((cell) => cell.trim());
+  }
+
   const cells: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -25,14 +29,19 @@ function splitLine(line: string, delimiter: string): string[] {
     }
   }
   cells.push(current.trim());
-  return cells;
+  return delimiter === '|' ? cells.filter((cell) => cell.length > 0) : cells;
+}
+
+function hasHeader(cells: string[]): boolean {
+  return cells.some((cell) => !Number.isFinite(Number(cell)));
 }
 
 function detectDelimiter(headerLine: string): string {
-  const candidates = [',', '\t', ';'];
-  return candidates
+  const candidates = [',', '\t', ';', '|', 'whitespace'];
+  const best = candidates
     .map((delimiter) => ({ delimiter, count: splitLine(headerLine, delimiter).length }))
-    .sort((a, b) => b.count - a.count)[0].delimiter;
+    .sort((a, b) => b.count - a.count)[0];
+  return best.count > 1 ? best.delimiter : ',';
 }
 
 export function parseCsv(text: string): ParsedCsv {
@@ -42,13 +51,23 @@ export function parseCsv(text: string): ParsedCsv {
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  if (lines.length < 2) {
-    throw new Error('CSV must contain a header row and at least one data row.');
+  if (lines.length < 1) {
+    throw new Error('Data must contain at least one row.');
   }
 
   const delimiter = detectDelimiter(lines[0]);
-  const headers = splitLine(lines[0], delimiter).map((h) => h.trim());
-  const rows = lines.slice(1).map((line) => {
+  const firstCells = splitLine(lines[0], delimiter);
+  const firstRowIsHeader = hasHeader(firstCells);
+  const headers = firstRowIsHeader
+    ? firstCells.map((h) => h.trim())
+    : firstCells.map((_, index) => `column_${index + 1}`);
+  const dataLines = firstRowIsHeader ? lines.slice(1) : lines;
+
+  if (dataLines.length < 1) {
+    throw new Error('Data must contain at least one data row.');
+  }
+
+  const rows = dataLines.map((line) => {
     const cells = splitLine(line, delimiter);
     const row: Record<string, string> = {};
     headers.forEach((header, index) => {
