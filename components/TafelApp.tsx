@@ -108,7 +108,7 @@ export function TafelApp() {
         <h1>Tafel Auto Detector</h1>
         <p>Electrochemistry AI Research Team</p>
         <p className="header-note">
-          이 코드는 <a href="https://www.sciencedirect.com/science/article/pii/S1572665726004996" target="_blank" rel="noreferrer">ScienceDirect 논문</a>에 기반하여 web에서도 가볍게 작동할 수 있도록 구현되었습니다.
+          This lightweight browser implementation is based on the approach described in “Deep reinforcement learning for automated Tafel analysis: A sequential decision-making approach” (Journal of Electroanalytical Chemistry, DOI: 10.1016/j.jelechem.2026.120285).
         </p>
       </header>
 
