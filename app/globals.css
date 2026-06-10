@@ -97,6 +97,17 @@ button:disabled {
   line-height: 1.5;
 }
 
+.lab-header .header-note {
+  font-size: 0.92rem;
+}
+
+.lab-header a {
+  color: white;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .content {
   padding: 32px;
 }

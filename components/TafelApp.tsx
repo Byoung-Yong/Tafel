@@ -107,6 +107,9 @@ export function TafelApp() {
       <header className="lab-header">
         <h1>Tafel Auto Detector</h1>
         <p>Electrochemistry AI Research Team</p>
+        <p className="header-note">
+          이 코드는 <a href="https://www.sciencedirect.com/science/article/pii/S1572665726004996" target="_blank" rel="noreferrer">ScienceDirect 논문</a>에 기반하여 web에서도 가볍게 작동할 수 있도록 구현되었습니다.
+        </p>
       </header>
 
       <section className="content stack">
