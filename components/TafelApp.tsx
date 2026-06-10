@@ -108,8 +108,9 @@ export function TafelApp() {
         <h1>Tafel Auto Detector</h1>
         <p>Electrochemistry AI Research Team</p>
         <p className="header-note">
-          This lightweight browser implementation is based on the approach described in “Deep reinforcement learning for automated Tafel analysis: A sequential decision-making approach” (Journal of Electroanalytical Chemistry, DOI: 10.1016/j.jelechem.2026.120285).
-        </p>
+  This lightweight browser implementation is based on the approach described in<br />
+  “Deep reinforcement learning for automated Tafel analysis: A sequential decision-making approach” (Journal of Electroanalytical Chemistry, DOI: 10.1016/j.jelechem.2026.120285).
+</p>
       </header>
 
       <section className="content stack">
