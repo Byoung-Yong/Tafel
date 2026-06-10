@@ -109,7 +109,7 @@ export function TafelApp() {
 
         <p className="header-note">
   This lightweight browser implementation is based on the approach described in<br />
-  <strong></strong>“Deep reinforcement learning for automated Tafel analysis: A sequential decision-making approach” <strong> </strong><br />
+  <strong></strong>“Deep reinforcement learning for automated Tafel analysis: A sequential decision-making approach” </strong> </strong><br />
   (Journal of Electroanalytical Chemistry, DOI: 10.1016/j.jelechem.2026.120285).
 </p>
       </header>
